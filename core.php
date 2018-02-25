@@ -131,6 +131,7 @@ function load_db_schema()
 
 function load_menu()
 {
+    global $userroles, $session;
     $menu_dashboard = array(); // Published Dashboards
     $menu_left = array();  // Left
     $menu_dropdown = array(); // Extra
@@ -144,7 +145,14 @@ function load_menu()
         {
             if (is_file("Modules/".$dir[$i]."/".$dir[$i]."_menu.php"))
             {
-                require "Modules/".$dir[$i]."/".$dir[$i]."_menu.php";
+                if ( isset($userroles)){
+                    // If userrole modules is installed, set module visibility based on users role
+                    if ($userroles->is_module_menu_visible($session['userid'], $dir[$i]) ){
+                        require "Modules/".$dir[$i]."/".$dir[$i]."_menu.php";
+                    }    
+                } else {
+                    require "Modules/".$dir[$i]."/".$dir[$i]."_menu.php";
+                }
             }
         }
     }

@@ -74,7 +74,8 @@
     // 3) User sessions
     require("Modules/user/user_model.php");
     $user = new User($mysqli,$redis);
-
+    
+    $scope = false;
     $apikey = false;
     $devicekey = false;
     if (isset($_GET['apikey'])) {
@@ -108,6 +109,11 @@
               $log->error("Invalid API key '" . $apikey. "'");
               exit();
         }
+        if ($session['write']){
+            $scope = 'apikey_write';
+        } else {
+            $scope = 'apikey_read';
+        }
     } else if ($devicekey && (@include "Modules/device/device_model.php")) {
         $device = new Device($mysqli,$redis);
         $session = $device->devicekey_session($devicekey);
@@ -118,10 +124,13 @@
               $log->error("Invalid device key '" . $devicekey. "'");
               exit();
         }
+        $scope = 'devicekey';
     } else {
         $session = $user->emon_session_start();
+        $scope = 'login';
     }
     
+    $session['scope'] = $scope;
     // 4) Language
     if (!isset($session['lang'])) $session['lang']='';
     set_emoncms_lang($session['lang']);
@@ -186,7 +195,25 @@
     else if ($route->controller == 'input' && $route->action == 'post') $route->format = 'json';
 
     // 6) Load the main page controller
-    $output = controller($route->controller);
+    
+    // Check if userroles module exists. Set session capabilities based on userrole per module.
+    $moduleActive = true;
+    if (@include "Modules/userroles/userroles_model.php" ){
+        $userroles = new Userroles($mysqli,$redis);
+        if ( $userroles->is_active()) {
+            $userroles->set_session( $session['userid'], $scope, $route->controller);
+            if (!$userroles->is_module_active($session['userid'], $route->controller)){
+                $output['content'] = "#UNDEFINED#";
+                $moduleActive = false;
+            }
+        } else {
+            unset($userroles);
+        }
+    }
+    
+    if ($moduleActive)
+        $output = controller($route->controller);
+    
 
     // If no controller of this name - then try username
     // need to actually test if there isnt a controller rather than if no content

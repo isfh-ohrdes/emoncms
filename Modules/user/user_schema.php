@@ -19,7 +19,8 @@ $schema['users'] = array(
     'language' => array('type' => 'varchar(5)', 'default'=>'en_EN'),
     'bio' => array('type' => 'text', 'default'=>''),
     'tags' => array('type' => 'text', 'default'=>NULL),
-    'startingpage' => array('type'=>'varchar(64)', 'default'=>'feed/list')
+    'startingpage' => array('type'=>'varchar(64)', 'default'=>'feed/list'),
+    'role' => array('type' => 'int', 'default'=>'0')   
 );
 
 $schema['rememberme'] = array(
